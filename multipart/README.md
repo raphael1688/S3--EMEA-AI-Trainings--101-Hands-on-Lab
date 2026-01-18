@@ -83,6 +83,4 @@ If the
 <br><br>
 [Back to Agenda](/README.md)
 
-```shell
 
-```
