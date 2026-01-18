@@ -17,7 +17,7 @@ mc admin user add minio-101 alice MyPass12345
 
 if you would try accessing object1 in bucket1 it should fail:
 ```shell
-mc list minio101/bucket1/
+mc ls minio-101/bucket1/
 ```
 
 why? because, except **admin** users do not have any permissions by default and credentials alone do nothing; so after creating a user, we should create an IAM Policy and assign it to the user.
