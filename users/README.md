@@ -12,13 +12,21 @@ Authentication, credentials with S3v4 and JWT
 So far, we have been using the **admin** user but we surely want to identifiy users individually.
 
 ```shell
-mc admin user add minio-101 alice MyPass12345
+ALICE_ACCESS_KEY="alice"
+ALICE_SECRET_KEY="myPass12345"
+
+mc admin user add minio-101 $ALICE_ACCESS_KEY $ALICE_SECRET_KEY
+
+mc alias set alice-minio-101 http://10.1.10.101:9000 "$ALICE_ACCESS_KEY" "$ALICE_SECRET_KEY"
+
 ```
 
 if you would try accessing object1 in bucket1 it should fail:
 ```shell
-mc ls minio-101/bucket1/
+mc ls alice-minio-101/bucket1/
 ```
+
+You should get a **mc: <ERROR> Unable to list folder. Access Denied.**
 
 why? because, except **admin** users do not have any permissions by default and credentials alone do nothing; so after creating a user, we should create an IAM Policy and assign it to the user.
 
@@ -50,14 +58,19 @@ mc admin policy attach minio-101 readonly --user alice
 Now let's try accessing the object for alice:
 
 ```shell
-mc alias set minio-101-alice http://10.1.20.101:9000 alice MyPass12345
-mc get minio-101-alice/exercice1/object1.txt
-
-echo "This is another file Alice cannot PUT but she can GET" > object2.txt
-mc copy ~/object1.txt minio101/bucket1/exercice1/object2.txt
-
-# This should fail"
+mc head alice-minio-101/bucket1/exercice1/object1.txt
+This is an object for Bucket1
 ```
+
+Now if you try to upload a file to bucket1:
+
+```shell
+echo "This is another file Alice cannot PUT but she can GET" > /tmp/object2.txt
+mc cp /tmp/object2.txt alice-minio-101/bucket1/exercice1/object2.txt
+mc: <ERROR> Failed to copy `/tmp/object2.txt`. Insufficient permissions to access this path `http://10.1.10.101:9000/bucket1/exercice1/object2.txt`
+```
+The request fails because you did not add PUT and POST permission to the bucket in the IAM Policy associated with alice.
+
 
 <br><br>
 ---
@@ -88,6 +101,11 @@ All S3 vendors includes ACLs on their solutions
 add the following configuration to allow direct requests working around the BIG-IP if routing and firewalling are not configured properly.
 
 By the way, let's secure a bit further our monitors so the bucket **monitor** is only accessible by our BIG-IP Self IP addresses:
+
+```shell
+vi monitor-bucket-policy.json
+```
+
 ```json
 {
   "Version": "2012-10-17",
@@ -113,12 +131,12 @@ Use exact object path, not *
 
 Principal: "*" is mandatory for anonymous access
 
-aws:SourceIp must match the IP MinIO actually sees
+aws:SourceIp must match the IP MinIO actually sees i.e. the IP address of the BIG-IP Self-IP or the SNAT IP address (you can use /24 if you want to grant to the whole subnet.
 
- vi monitor-bucket-policy.json
-  353  mc anonymous set-json monitor-bucket-policy.json minio-105/monitor/monitor
-  354  mc anonymous set-json monitor-bucket-policy.json minio-104/monitor/monitor
-
+```shell
+mc anonymous set-json monitor-bucket-policy.json minio-105/monitor/monitor
+mc anonymous set-json monitor-bucket-policy.json minio-104/monitor/monitor
+```
 
 Now if you try to curl from the client, you should be reject:
 
@@ -191,15 +209,7 @@ OK
 
 <br><br>
 ---
-## 6.6 Lesson learned
-
-MITR3 ATT&CK Framework references and Tactics/Techniques
-
-
-
-<br><br>
----
-## 6.7 BIG-IP Recommandations and configurations
+## 6.6 BIG-IP Recommandations and configurations
 ### 6.7.1 Goals
 
 We have two major goals: 
@@ -208,7 +218,6 @@ We have two major goals:
 
 
 <br><br>
----
 
 ### 6.7.2 Reject Anonymous S3 requests
 
