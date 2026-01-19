@@ -70,6 +70,8 @@ Work In Progress.
 
 :computer:   [13. Performance Testing guidance](performances/README.md)
 
-This lab shares feedback and guidance some rules we get by experience when running performance testings
+This lab shares feedback and guidance some rules we get by experience when running performance testings. 
+<br>
+
 :spiral_notepad:   [14. Final Takeaways](conclusion/README.md)
 
