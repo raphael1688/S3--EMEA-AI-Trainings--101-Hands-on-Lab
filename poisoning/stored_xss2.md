@@ -241,7 +241,8 @@ MINIO_SECRET_KEY="myPass12345"
 
 docker build -t s3-xss-demo .
 
-docker run -p 3000:3000 \
+docker run -d --restart unless-stopped \
+  -p 3000:3000 \
   -e S3_ENDPOINT=http://$MINIO_101 \
   -e S3_ACCESS_KEY=$MINIO_ACCESS_KEY \
   -e S3_SECRET_KEY=$MINIO_SECRET_KEY \
