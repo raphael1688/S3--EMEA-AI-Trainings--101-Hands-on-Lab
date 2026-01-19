@@ -25,7 +25,7 @@ On the UDF Deployment, on the **Access** tab of the server, you will find the fo
 - minio-105-console
 
 For each of them, or you can mix between UI and CLI if you want this step to be less boring:
-login as **admin** with password **MinioPass12345**
+login as **admin** with password **myPass12345**
 
 on the left side menu click **bucket** > **add**
 
