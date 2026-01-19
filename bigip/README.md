@@ -40,8 +40,8 @@ When you do replication, ach object is stored as full copies across multiple nod
 <br>
  - **Multipart PUT**
 Multipart uploads and downloads require persistence.
-We will see later in the lab the details on multipart and why it makes sense to have CARP persistence on it
-[S3 Multipart](https://github.com/fchmainy/s3_lab/tree/main/multipart%20#7-s3-multipart)
+We will see later in the lab the details on multipart and why it makes sense to have CARP persistence on it 
+[S3 Multipart](/multipart/README.md)
 
 <br>
 <br>
