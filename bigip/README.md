@@ -107,7 +107,7 @@ Then OneConnect adds the following benefits:
 
 
 <p align="center">
-	<img width="800" src="https://github.com/f5devcentral/S3--EMEA-AI-Trainings--101-Hands-on-Lab/blob/main/docs/oneConnect?raw=true" alt="One Connect Menu">
+	<img width="800" src="https://github.com/f5devcentral/S3--EMEA-AI-Trainings--101-Hands-on-Lab/blob/main/docs/oneConnect.jpg?raw=true" alt="One Connect Menu">
 </p>
 <br>
 <br>
@@ -118,9 +118,9 @@ Second, let's prevents long-lived idle connections pinning backend nodes
 
 Ensures connection reuse is per client: **255.255.255.255**
 
-<br>
+
 <p align="center">
-	<img width="500" src="https://github.com/fchmainy/s3_lab/blob/main/docs/oneconnect_config.jpg?raw=true" alt="One Connect Configuration">
+	<img width="800" src="https://github.com/f5devcentral/S3--EMEA-AI-Trainings--101-Hands-on-Lab/blob/main/docs/oneconnect_config.jpg?raw=true" alt="One Connect Configuration">
 </p>
 <br>
 <br>
