@@ -1,29 +1,102 @@
 # 8. Pre-Signed URLs
 
-## 8.0 Pain points
+## 8.0 Pain points we are trying to solve
 - to control from a central point pre-signed URLs
 - to identify abuse of non authenticated requests
 
+<br><br>
 
 ## 8.1 What is an S3 pre-signed URL?
-A pre-signed URL is meant to be easily shared and available for a limited amount of time. Think about it like a file transfert link without the need of sharing an access key and a secret key that you share with an external user for a couple of days. This link would be available to GET (download) a specific file or PUT a file (upload) to a bucket.
+A pre-signed URL is meant to be easily shared and available for a limited amount of time. Think about it like a file transfert link without the need of sharing an access key and a secret key that you share with an external user for a couple of days.
+This link would be available to GET (download) a specific file or PUT a file (upload) to a bucket.
 After the admin specified expiration date, the link is not available anymore.
 
 
 a pre-signed URL can be created to upload an object to a bucket for an amount of time (here it is configured for 168 hours, therefore 7 days):
 ```shell
 mc share upload minio-101/bucket1/test.txt --expire 168h
+```
+```yaml
 URL: http://10.1.10.101:9000/bucket1/test.txt
 Expire: 7 days 0 hours 0 minutes 0 seconds
 Share: curl http://10.1.10.101:9000/bucket1/ -F bucket=bucket1 -F policy=eyJleHBpcmF0aW9uIjoiMjAyNi0wMS0yNVQyMzoxMjozMS41MDdaIiwiY29uZGl0aW9ucyI6W1siZXEiLCIkYnVja2V0IiwiYnVja2V0MSJdLFsiZXEiLCIka2V5IiwidGVzdC50eHQiXSxbImVxIiwiJHgtYW16LWRhdGUiLCIyMDI2MDExOFQyMzEyMzFaIl0sWyJlcSIsIiR4LWFtei1hbGdvcml0aG0iLCJBV1M0LUhNQUMtU0hBMjU2Il0sWyJlcSIsIiR4LWFtei1jcmVkZW50aWFsIiwiYWRtaW4vMjAyNjAxMTgvdXMtZWFzdC0xL3MzL2F3czRfcmVxdWVzdCJdXX0= -F x-amz-algorithm=AWS4-HMAC-SHA256 -F x-amz-credential=admin/20260118/us-east-1/s3/aws4_request -F x-amz-date=20260118T231231Z -F x-amz-signature=e27668b4822f2bff1292609cd7d27e24134780e787ec376e5d8d7daef1972e62 -F key=test.txt -F file=@<FILE>
 ```
 
-You can then copy and paste the given curl command and reuse it as much as you want to upload the test.txt object to bucket1 during the allowed period of 7 days.
+
+The curl command provided as a response is meant to be shared and reuse it as much as you want to upload the test.txt object to bucket1 during the allowed period of 7 days.
+
 :warning:
 > Remember, attackers can host malwares or overwrite existing files with malicious contents.
 
 
-a pre-signed URL can be created for GET requests
+Let's dig into the curl request that is returned for reuse:
+```yaml
+-F bucket=bucket1 
+-F policy=eyJleHBpcmF0aW9uIjoiMjAyNi0wMS0yNVQ..dCJdXX0= 
+-F x-amz-algorithm=AWS4-HMAC-SHA256 
+-F x-amz-credential=admin/20260118/us-east-1/s3/aws4_request 
+-F x-amz-date=20260118T231231Z 
+-F x-amz-signature=e27668b4822f2bff1292609cd7d27e24134780e787ec376e5d8d7daef1972e62 
+-F key=test.txt 
+-F file=@<FILE>
+```
+
+The **policy field** is a base64 encoding of the pre-signed POST policy:
+```json
+{
+  "expiration": "2026-01-25T23:12:31.507Z",
+  "conditions": [
+    [
+      "eq",
+      "$bucket",
+      "bucket1"
+    ],
+    [
+      "eq",
+      "$key",
+      "test.txt"
+    ],
+    [
+      "eq",
+      "$x-amz-date",
+      "20260118T231231Z"
+    ],
+    [
+      "eq",
+      "$x-amz-algorithm",
+      "AWS4-HMAC-SHA256"
+    ],
+    [
+      "eq",
+      "$x-amz-credential",
+      "admin/20260118/us-east-1/s3/aws4_request"
+    ]
+  ]
+}
+```
+
+and you compare it with the debug HTTP commands of an mc command we executed in the previous lab we find big differences in the way objects are uploaded in a bucket:
+
+| Layer              | `mc PUT` (SigV4 Header Auth)              | Presigned POST Request (Query SigV4)                     |
+|-----------------------------|---------------------------------------------------|--------------------------------------------------|
+| HTTP method                 | PUT                                               | POST                                             |
+| Request path                | /bucket/object                                    | /bucket/                                         |
+| Object name source          | URL path                                          | Multipart form field `key`                       |
+| Bucket source               | URL path                                          | URL path **and** form field `bucket`             |
+| Authentication location     | `Authorization` HTTP header                       | Form fields (`policy` + `x-amz-signature`)       |
+| Signature type              | AWS Signature V4 (canonical request)              | AWS Signature V4 (policy document)               |
+| What is signed              | Method, path, headers, payload hash               | Policy JSON only                                 |
+| Signed headers              | `host;x-amz-date;x-amz-content-sha256;…`          | None                                             |
+| Authorization header        | **Present**                                       | **Absent**                                       |
+| Payload hash                | `STREAMING-AWS4-HMAC-SHA256-PAYLOAD`               | Not hashed / not signed                          |
+| Content-Type                | `text/plain` (or object MIME type)                | `multipart/form-data`                            |
+| Object data location        | Raw HTTP request body                             | Multipart field `file`                           |
+| Object size handling        | Streaming (`X-Amz-Decoded-Content-Length`)        | Known via multipart length                       |
+
+
+
+
+A pre-signed URL can be also be created for reusable GET requests
 ```shell
 mc share download minio-101/bucket1/exercice1/object1.txt --expire 168h
 URL: http://10.1.10.101:9000/bucket1/exercice1/object1.txt
@@ -33,11 +106,32 @@ Share: http://10.1.10.101:9000/bucket1/exercice1/object1.txt?X-Amz-Algorithm=AWS
 
 The curl command provided can be used in a script, to a user or just share the hashed header in a GET request code but it will be valid only for the specified amount of time.
 
+
+| Concept / Layer              | mc --debug GET (Header-based SigV4)             | Presigned GET URL (Query-string SigV4)            |
+|-----------------------------|---------------------------------------------------|--------------------------------------------------|
+| HTTP method                 | GET                                             | `GET`                                            |
+| Request path                | `/bucket1/exercice1/object1.txt`                  | `/bucket1/exercice1/object1.txt`                 |
+| Host header                 | `10.1.10.101:9000`                                | `10.1.10.101:9000`                               |
+| Authentication transport    | HTTP headers                                      | URL query parameters                             |
+| Authorization header        | **Present**                                       | **Absent**                                       |
+| Authorization value         | `AWS4-HMAC-SHA256 Credential=...,SignedHeaders=...,Signature=...` | N/A |
+| Signed headers              | `host;x-amz-content-sha256;x-amz-date`            | `host`                                          |
+| `X-Amz-SignedHeaders`       | Implicit (in Authorization header)                | Explicit query param                             |
+| Signature location          | `Authorization` header                            | `X-Amz-Signature` query param                   |
+| `X-Amz-Algorithm`           | Implicit (`AWS4-HMAC-SHA256`)                     | Explicit query param                             |
+| `X-Amz-Credential`          | Implicit (in Authorization header)                | Explicit query param                             |
+| `X-Amz-Date`                | Header                                             | Query param                                     |
+| Expiration handling         | None (request-time only)                          | `X-Amz-Expires` (max 604800s)                    |
+| Payload hash                | `e3b0c44298fc1c..34ca495b7852b855` (empty payload) | `UNSIGNED-PAYLOAD` |
+| `X-Amz-Content-Sha256`      | Required                                           | Not present                                     |
+
+
 <br>
 
 Note:
 > certain S3 client and servers allow pre-signed POST to allow the upload of any objects on a specified bucket for a certain period of time (max. 7 days)
 
+> The intent of the comparison is to determine later how we could identify pre-signed POST and GET requests on the BIG-IP and make decisions on it based on the enterprise decision: either we let them pass, or block or only let pre-signed with an expiration date lower than X days.
 
 
 ## 8.2 Risks of Pre-Signed URLs
