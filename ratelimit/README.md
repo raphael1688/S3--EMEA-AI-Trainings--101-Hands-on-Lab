@@ -31,18 +31,28 @@ Rate-limiting can protect against DDoS attacks, misconfigured clients, or accide
 
 ## On which criteria do we want to rate-limit?
 
-When implementing S3 request rate-limiting, you can base it on different criteria depending on your goals. Some common criteria include:
+When implementing S3 request rate-limiting, you can base it on different criteria depending on your goals. Some common examples include:
 
-| Criterion | Explanation	| Example / Rationale|
+| Criteria | Explanation	| Example / Rationale|
 |----|---|---|
 | Client identity / access key	| Rate-limit per IAM user or access key	| Prevents a single client from overwhelming the cluster while allowing others to operate normally |
-| IP address / subnet	Limit requests based on client IP	| Useful when clients don’t authenticate or you want to limit traffic per network segment (e.g., BIG-IP health check subnet) |
-| Bucket / object	Rate-limit | requests to specific buckets or hot objects	| Protects popular buckets (e.g., monitor) from floods without throttling other buckets |
+| IP address / subnet	| Limit requests based on client IP	| Useful when clients don’t authenticate or you want to limit traffic per network segment but limited when multiple clients are hosted behind a proxy  |
+| Bucket / object	Rate-limit | Requests to specific buckets or hot objects	| Protects popular buckets from floods without throttling other buckets |
 | HTTP method / action type	| Separate limits for GET, PUT, DELETE, etc.	| PUT/POST/DELETE are usually heavier on storage or processing than GET; throttling writes protects storage I/O |
 | Request size / bandwidth	| Limit based on bytes transferred per second	| Prevents large uploads or downloads from saturating network links |
-| Global cluster limit	| Total requests per second across all clients	| Ensures the MinIO cluster remains stable under load spikes |
+| Global cluster limit	| Total requests per second across all clients	| Ensures the S3 cluster remains stable under load spikes |
 
 <br><br>
+
+When we debugged S3 requests in a previous lab, you probably identified the 2 following arguments in the response from the minio nodes:
+
+```yaml
+X-Ratelimit-Limit: 6974
+X-Ratelimit-Remaining: 6974
+```
+
+We could also override these values when passing them to the client but all the S3 vendors don't use them and you rely on the client to honour them which is not always the case.
+
 
 ## iRule to rate-limit S3 traffic
 
