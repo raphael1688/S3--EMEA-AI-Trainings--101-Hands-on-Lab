@@ -285,11 +285,11 @@ S3 Pre-signed URLs are a great feature that are very convenient for time limited
 Here we provided an iRule, you can also create your own A.WAF custom attack signatures to fullfill the same goals:
 
 <p align="center">
-	<img width="800" src="https://github.com/f5devcentral/S3--EMEA-AI-Trainings--101-Hands-on-Lab/blob/main/docs/S3_PRESIGNED_UPLOAD_POST.jpg?raw=true" alt="AWAF Custom Attack Signature Upload">
+	<img width="400" src="https://github.com/f5devcentral/S3--EMEA-AI-Trainings--101-Hands-on-Lab/blob/main/docs/S3_PRESIGNED_UPLOAD_POST.jpg?raw=true" alt="AWAF Custom Attack Signature Upload">
 </p>
 <br>
 <p align="center">
-	<img width="800" src="https://github.com/f5devcentral/S3--EMEA-AI-Trainings--101-Hands-on-Lab/blob/main/docs/S3_PRESIGNED_DOWNLOAD_QUERY.jpg?raw=true" alt="AWAF Custom Attack Signature Upload">
+	<img width="400" src="https://github.com/f5devcentral/S3--EMEA-AI-Trainings--101-Hands-on-Lab/blob/main/docs/S3_PRESIGNED_DOWNLOAD_QUERY.jpg?raw=true" alt="AWAF Custom Attack Signature Upload">
 </p>
 <br>
 <p align="center">
